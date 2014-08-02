@@ -201,7 +201,10 @@ def executeQuery(function):
 	queryOutputField.configure(state="normal")
 	queryOutputField.insert(1.0, "\n")
 	if function == 'execute':
-		queryOutputField.insert(1.0,backend.execute(textTop.get(1.0,END)))
+		querytext = textTop.get(1.0,END)
+		queryList = querytext.split(';')
+		for query in queryList:
+			queryOutputField.insert(1.0,backend.execute(query))
 	elif function == 'dbConnect':
 		queryOutputField.insert(1.0,backend.dbConnect(str(entryBox[0].get())))
 		#print backend.dbConnect(str(EA.get()))
