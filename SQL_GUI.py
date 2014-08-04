@@ -199,40 +199,43 @@ def frameTopTransform(function):
 
 def executeQuery(function):
 	queryOutputField.configure(state="normal")
+	output = ""
 	queryOutputField.insert(1.0, "\n")
 	if function == 'execute':
 		querytext = textTop.get(1.0,END)
 		queryList = querytext.split(';')
 		for query in queryList:
+			queryOutputField.insert(1.0, "\n")
 			queryOutputField.insert(1.0,backend.execute(query))
 	elif function == 'dbConnect':
-		queryOutputField.insert(1.0,backend.dbConnect(str(entryBox[0].get())))
+		output = backend.dbConnect(str(entryBox[0].get()))
 		#print backend.dbConnect(str(EA.get()))
 		#print str(function + " " + EA.get())
 	elif function == 'dbCommit':
-		queryOutputField.insert(1.0,backend.dbCommit())
+		output = backend.dbCommit()
 	elif function == 'dbClose':
-		queryOutputField.insert(1.0,backend.dbClose())
+		output = backend.dbClose()
 		#print backend.dbClose()
 	elif function == 'createTable':
-		query = "queryOutputField.insert(1.0,backend.createTable('" + entryBox[0].get() + "'," + str(entryBox[1].get().split(','))
+		query = "output = backend.createTable('" + entryBox[0].get() + "'," + str(entryBox[1].get().split(','))
 		if len(entryBox[2].get()) != 0:
 			query += "," + str(entryBox[2].get().split(','))
-		query += "))" 
+		query += ")" 
 		exec query
 	elif function == 'deleteTable':
-		queryOutputField.insert(1.0,backend.deleteTable(str(entryBox[0].get())))
+		output = backend.deleteTable(str(entryBox[0].get()))
 	elif function == 'insertInto':
 		for i in range(1,3):
 			print entryBox[i].get().split(',')
 		if len(entryBox[2].get()) == 0:
-			queryOutputField.insert(1.0,backend.insertInto(str(entryBox[0].get()),str(entryBox[1].get()).split(',')))
+			output = backend.insertInto(str(entryBox[0].get()),str(entryBox[1].get()).split(','))
 		else:
-			queryOutputField.insert(1.0,backend.insertInto(str(entryBox[0].get()),str(entryBox[1].get()).split(','),str(entryBox[2].get()).split(',')))
+			output = backend.insertInto(str(entryBox[0].get()),str(entryBox[1].get()).split(','),str(entryBox[2].get()).split(','))
 	elif function == 'selectStar':
-		queryOutputField.insert(1.0,backend.selectStar(str(entryBox[0].get())))
+		output = backend.selectStar(str(entryBox[0].get()))
+		output = outputFormat(output)
 	elif function == 'select':
-		query = "queryOutputField.insert(1.0,backend.select(entryBox[0].get()"
+		query = "output = backend.select(entryBox[0].get()"
 		parameter = ['tableName','whereColumn','whereData','columns','operand']
 		for i in [3]:
 			if len(entryBox[i].get()) != 0:
@@ -240,11 +243,11 @@ def executeQuery(function):
 		for i in [1,2,4]:
 			if len(entryBox[i].get()) != 0:
 				query += "," + parameter[i] + " = '" + entryBox[i].get() + "'"
-		query += "))"
+		query += ")"
 		print query
 		exec query
 	elif function == 'selectAND' or function == 'selectOR':
-		query = "queryOutputField.insert(1.0,backend." + function + "(entryBox[0].get()"
+		query = "output = backend." + function + "(entryBox[0].get()"
 		parameter = ['tableName','whereColumns','whereData','columns','operand']
 		for i in [1,2,3]:
 			if len(entryBox[i].get()) != 0:
@@ -256,7 +259,7 @@ def executeQuery(function):
 		#print query
 		exec query
 	elif function == 'selectIN':
-		query = "queryOutputField.insert(1.0,backend." + function + "(entryBox[0].get()"
+		query = "output = backend." + function + "(entryBox[0].get()"
 		parameter = ['tableName','whereColumn','whereData','columns']
 		for i in [2,3]:
 			if len(entryBox[i].get()) != 0:
@@ -268,7 +271,7 @@ def executeQuery(function):
 		#print query
 		exec query
 	elif function == 'updateWhere':
-		query = "queryOutputField.insert(1.0,backend." + function + "(entryBox[0].get()"
+		query = "output = backend." + function + "(entryBox[0].get()"
 		parameter = ['tableName','setCols','setData','whereCol','whereData','operand']
 		for i in [1,2]:
 			if len(entryBox[i].get()) != 0:
@@ -280,7 +283,7 @@ def executeQuery(function):
 		#print query
 		exec query
 	elif function == 'updateWhereAND' or function == 'updateWhereOR':
-		query = "queryOutputField.insert(1.0,backend." + function + "(entryBox[0].get()"
+		query = "output = backend." + function + "(entryBox[0].get()"
 		parameter = ['tableName','setCols','setData','whereCols','whereData','operand']
 		for i in [1,2,3,4]:
 			if len(entryBox[i].get()) != 0:
@@ -292,7 +295,7 @@ def executeQuery(function):
 		#print query
 		exec query
 	elif function == 'updateWhereIN':
-		query = "queryOutputField.insert(1.0,backend." + function + "(entryBox[0].get()"
+		query = "output = backend." + function + "(entryBox[0].get()"
 		parameter = ['tableName','setCols','setData','whereCol','whereData','operand']
 		for i in [1,2,4]:
 			if len(entryBox[i].get()) != 0:
@@ -304,7 +307,7 @@ def executeQuery(function):
 		#print query
 		exec query
 	elif function == 'delete':
-		query = "queryOutputField.insert(1.0,backend." + function + "(entryBox[0].get()"
+		query = "output = backend." + function + "(entryBox[0].get()"
 		parameter = ['tableName','whereCol','whereData','operand']
 		for i in []:
 			if len(entryBox[i].get()) != 0:
@@ -317,6 +320,27 @@ def executeQuery(function):
 		exec query
 	else:
 		print "frameTopTransform(): command not recognized"
+	
+	queryOutputField.insert(1.0,output)
 	queryOutputField.configure(state="disabled")
+
+
+#This function takes in one variable output which is a list of lists of strings and returns an output string
+def outputFormat(output):
+	maxLengths = []
+	newOutput = ""
+	for row in output:
+		maxLength = 0
+		for col in row:
+			if len(col) > maxLength:
+				maxLength = len(col)
+		maxLengths.append(maxLength)
+	for i in range(len(output)):
+		for j in range(len(output[i])):
+			newOutput += "     " + output[i][j]
+			for k in range(len(output[i][j]),maxLengths[j]+1):
+				newOutput += " "
+		newOutput += "\n"
+	return newOutput
 
 main.mainloop()

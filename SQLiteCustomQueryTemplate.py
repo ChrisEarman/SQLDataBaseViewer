@@ -48,7 +48,8 @@ def dbClose():
 def execute(query):
 	try:
 		cursor.execute(query)
-		return "SUCCESS: \n" + str(cursor.fetchall())
+		retVal = cursor.fetchall()
+		return retVal
 	except:
 		return "FAILED: execute() - proofread your query and make sure all connections are established correctly"
 
