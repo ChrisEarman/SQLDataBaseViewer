@@ -1,5 +1,7 @@
 from Tkinter import *
+import webbrowser
 import SQLiteCustomQueryTemplate as backend
+import PrettyOutput_SQLite as prettyOutput
 
 
 main = Tk()
@@ -37,6 +39,65 @@ executeFrame.pack()
 
 inputScrollbar.config(command = textTop.yview)
 
+#-------------------------
+#-------menuBar-----------
+#-------------------------
+
+def donothing():
+	filewin = Toplevel(main)
+	label = Label(filewin, text="Info: No Action Preformed")
+	label.pack()
+
+def exit():
+	backend.dbClose()
+	main.quit()
+
+prettyOutputOn = BooleanVar()
+prettyOutputOn.set(True)
+colNameInclude = BooleanVar()
+colNameInclude.set(False)
+colTypeInclude = BooleanVar()
+colTypeInclude.set(False)
+colDivider = StringVar()
+colDivider.set(" ")
+def propertiesEdit():
+	propertyWin = Toplevel(main)
+	propertyWin.title("Properties")
+	prettyOTrue = Radiobutton(propertyWin, text="On",variable=prettyOutputOn,value=True)
+	prettyOFalse = Radiobutton(propertyWin, text="Off",variable=prettyOutputOn,value=False)
+	colNamesTrue = RadioButton(propertyWin, text="On",variable=colNameInclude,value=True)
+	colNamesFalse = RadioButton(propertyWin, text="Off",variable=colNameInclude,value=False)
+	colTypesTrue = RadioButton(propertyWin, text="On",variable=colTypeInclude,value=True)
+	colTypesFalse = RadioButton(propertyWin, text="Off",variable=colTypeInclude,value=False)
+
+def openWiki():
+	webbrowser.open("https://github.com/ChrisEarman/SQLDataBaseViewer/wiki")
+
+def clearBoard():
+	#print 'clear'
+	queryOutputField.config(state = "normal")
+	queryOutputField.delete(0.0,END)
+	queryOutputField.config(state = "disabled")
+
+menubar = Menu(main)
+filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="Clear Board", command=clearBoard)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=exit)
+menubar.add_cascade(label="File", menu=filemenu)
+
+editmenu = Menu(menubar, tearoff=0)
+editmenu.add_command(label="Undo", command=donothing)
+editmenu.add_separator()
+editmenu.add_command(label="Properties", command=propertiesEdit)
+menubar.add_cascade(label="Edit", menu=editmenu)
+
+helpmenu = Menu(menubar, tearoff=0)
+helpmenu.add_command(label="Help Index", command=donothing)
+helpmenu.add_command(label="About...", command=openWiki)
+menubar.add_cascade(label="Help", menu=helpmenu)
+
+main.config(menu = menubar)
 
 #-------------------------
 #-------frame0------------
@@ -197,16 +258,40 @@ def frameTopTransform(function):
 	else:
 		print "frameTopTransform(): command not recognized"
 
+#This function takes in a query and parses out the Table name and returns that tablename - used in the execute function
+def parseTableName(query):
+	stringList = query.split(" ")
+	tableNameFound = False
+	for i in stringList:
+		if tableNameFound:
+			return i
+		elif str(i).lower() == "from":
+			tableNameFound = True
+		else:
+			pass
+	return "FAILED: paresTableName() - no TableName Found"
+
 def executeQuery(function):
 	queryOutputField.configure(state="normal")
 	output = ""
 	queryOutputField.insert(1.0, "\n")
 	if function == 'execute':
-		querytext = textTop.get(1.0,END)
+		subOutput = ""
+		querytext = textTop.get(1.0,END).rstrip() #removes tailing whitespace
+		#removes the tailing ; if present
+		if querytext.endswith(';'): 
+			querytext = querytext[:-1]
 		queryList = querytext.split(';')
 		for query in queryList:
-			queryOutputField.insert(1.0, "\n")
-			queryOutputField.insert(1.0,backend.execute(query))
+			#print query
+			subOutput = backend.execute(query)
+			if "select" in query.lower():
+				table = parseTableName(query)
+				#print table
+				subOutput = prettyOutput.outputFormat(subOutput,tableName = table)
+			if subOutput == "[]": 
+				subOutput = "SUCCESS - No Output: " + query 
+			output += str(subOutput) + "\n"
 	elif function == 'dbConnect':
 		output = backend.dbConnect(str(entryBox[0].get()))
 		#print backend.dbConnect(str(EA.get()))
@@ -233,7 +318,7 @@ def executeQuery(function):
 			output = backend.insertInto(str(entryBox[0].get()),str(entryBox[1].get()).split(','),str(entryBox[2].get()).split(','))
 	elif function == 'selectStar':
 		output = backend.selectStar(str(entryBox[0].get()))
-		output = outputFormat(output)
+		output = prettyOutput.outputFormat(output,divider=" | ",nameInclude=True,tableName=entryBox[0].get(),typeInclude=True)
 	elif function == 'select':
 		query = "output = backend.select(entryBox[0].get()"
 		parameter = ['tableName','whereColumn','whereData','columns','operand']
@@ -324,23 +409,5 @@ def executeQuery(function):
 	queryOutputField.insert(1.0,output)
 	queryOutputField.configure(state="disabled")
 
-
-#This function takes in one variable output which is a list of lists of strings and returns an output string
-def outputFormat(output):
-	maxLengths = []
-	newOutput = ""
-	for row in output:
-		maxLength = 0
-		for col in row:
-			if len(col) > maxLength:
-				maxLength = len(col)
-		maxLengths.append(maxLength)
-	for i in range(len(output)):
-		for j in range(len(output[i])):
-			newOutput += "     " + output[i][j]
-			for k in range(len(output[i][j]),maxLengths[j]+1):
-				newOutput += " "
-		newOutput += "\n"
-	return newOutput
 
 main.mainloop()
