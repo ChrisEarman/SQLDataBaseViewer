@@ -1,4 +1,5 @@
 from Tkinter import *
+import tkFont
 import webbrowser
 import SQLiteCustomQueryTemplate as backend
 import PrettyOutput_SQLite as prettyOutput
@@ -6,7 +7,7 @@ import PrettyOutput_SQLite as prettyOutput
 
 main = Tk()
 main.title("SQL_c")
-main.geometry("902x350+100+100")
+main.geometry("1050x450+100+100")
 outputFrame = Frame(main)
 executeFrame = Frame(main)
 buttonFrame = Frame(main)
@@ -22,6 +23,9 @@ functionLabelVar = StringVar()
 functionLabelVar.set("[NONE]")
 functionLabel = Label (templateWin, text = functionLabelVar.get())
 functionLabel.grid(row = 0, column = 0)
+
+standardFont = tkFont.Font(size = -12) #the -12 means the font is 12 pixels in height
+textBoxFont = tkFont.Font(family = 'Courier',size=-12)
 
 #-------------------------
 #------buttonFrame--------
@@ -47,22 +51,22 @@ def clearBoard(event=[]):
 	queryOutputField.delete(0.0,END)
 	queryOutputField.config(state = "disabled")
 
-dbLabel = Label(buttonFrame, text = "DataBase")
+dbLabel = Label(buttonFrame, text = "DataBase", font = standardFont)
 dbLabel.grid(row = 0, column = 0, columnspan = 2)
-dbEntry = Entry(buttonFrame, width = 15 , bd = 2)
+dbEntry = Entry(buttonFrame, width = 15 , bd = 2, font = standardFont)
 dbEntry.bind("<Return>", callConnect)
-dbEntry.grid(row = 1, column = 0)
-dbConnectButton = Button(buttonFrame, text = "Connect", command = callConnect, width = 9)
+dbEntry.grid(row = 1, column = 0, ipady = 3)
+dbConnectButton = Button(buttonFrame, text = "Connect", command = callConnect, width = 7, font = standardFont)
 dbConnectButton.grid(row = 1, column = 1)
-dbCommitButton = Button(buttonFrame, text = "Commit", command = callCommit, width = 25)
+dbCommitButton = Button(buttonFrame, text = "Commit", command = callCommit, width = 23, font = standardFont)
 dbCommitButton.grid(row = 2, column = 0, columnspan = 2)
-dbCloseButton = Button(buttonFrame, text = "Close DataBase", command = callClose, width = 25)
+dbCloseButton = Button(buttonFrame, text = "Close DataBase", command = callClose, width = 23, font = standardFont)
 dbCloseButton.grid(row = 3, column = 0, columnspan = 2)
-templateButton = Button(buttonFrame, text = "Template", command = tempActivate, width = 25)
+templateButton = Button(buttonFrame, text = "Template", command = tempActivate, width = 23, font = standardFont)
 templateButton.grid(row = 4, column = 0, columnspan = 2)
-clearBoardButton = Button(buttonFrame, text = "Clear Board", command = clearBoard, width = 25)
+clearBoardButton = Button(buttonFrame, text = "Clear Board", command = clearBoard, width = 23, font = standardFont)
 clearBoardButton.grid(row = 5, column = 0, columnspan = 2)
-executeButton = Button(buttonFrame, text = "Run Query", command = runExecute, width = 25, height = 2)
+executeButton = Button(buttonFrame, text = "Run Query", command = runExecute, width = 23, font = standardFont, height = 2)
 executeButton.grid(row = 6, column = 0, columnspan = 2)
 
 buttonFrame.grid(row = 0, column = 0, rowspan = 2, sticky = N)
@@ -85,9 +89,13 @@ for i in range(0,10):
 	entryBox[i] = Entry(templateFrameSubs[i])
 	entryBox[i].pack(side=BOTTOM)
 
+#-------------------------
+#-------Input Feild-------
+#-------------------------
+
 inputScrollbar = Scrollbar(executeFrame)
 inputScrollbar.pack(side=RIGHT,fill=Y)
-textTop = Text(executeFrame,width = 103, height = 10,yscrollcommand = inputScrollbar.set)
+textTop = Text(executeFrame,width = 120, height = 15,yscrollcommand = inputScrollbar.set, font = textBoxFont)
 textTop.pack(side = LEFT, fill=BOTH)
 executeFrame.grid(row = 0, column = 1)
 
@@ -111,7 +119,7 @@ prettyOutputOn.set(True)
 colNameInclude = BooleanVar()
 colNameInclude.set(True)
 colTypeInclude = BooleanVar()
-colTypeInclude.set(True)
+colTypeInclude.set(False)
 colDivider = StringVar()
 colDivider.set(" | ")
 def propertiesEdit():
@@ -236,7 +244,7 @@ outputScrollbarX = Scrollbar(outputFrame, orient = HORIZONTAL)
 outputScrollbarX.pack(side=BOTTOM,fill=X)
 #outputScrollbar.pack(fill = Y)
 
-queryOutputField = Text(outputFrame, bd = 2, height = 10, width = 103, yscrollcommand = outputScrollbar.set, xscrollcommand = outputScrollbarX.set, wrap = NONE)
+queryOutputField = Text(outputFrame, bd = 2, height = 12, width = 120, yscrollcommand = outputScrollbar.set, xscrollcommand = outputScrollbarX.set, wrap = NONE, font = textBoxFont)
 queryOutputField.configure(state='disabled')
 queryOutputField.pack(side = LEFT, fill=BOTH)
 outputFrame.grid(row = 1, column = 1, rowspan = 1, sticky = NW)
