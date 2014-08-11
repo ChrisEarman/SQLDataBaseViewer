@@ -4,6 +4,17 @@ import webbrowser
 import SQLiteCustomQueryTemplate as backend
 import PrettyOutput_SQLite as prettyOutput
 
+SQLKeyWords = ['ABORT','ACTION','ADD','AFTER','ALL','ALTER','ANALYZE','AND','AS','ASC','ATTACH','AUTOINCREMENT',
+'BEFORE','BEGIN','BETWEEN','BY','CASCADE','CASE','CAST','CHECK','COLLATE','COLUMN','COMMIT','CONFLICT',
+'CONSTRAINT','CREATE','CROSS','CURRENT_DATE','CURRENT_TIME','CURRENT_TIMESTAMP','DATABASE','DEFAULT',
+'DEFERRABLE','DEFERRED','DELETE','DESC','DETACH','DISTINCT','DROP','EACH','ELSE','END','ESCAPE','EXCEPT'
+,'EXCLUSIVE','EXISTS','EXPLAIN','FAIL','FOR','FOREIGN','FROM','FULL','GLOB','GROUP','HAVING','IF',
+'IGNORE','IMMEDIATE','IN','INDEX','INDEXED','INITIALLY','INNER','INSERT','INSTEAD','INTERSECT','INTO',
+'IS','ISNULL','JOIN','KEY','LEFT','LIKE','LIMIT','MATCH','NATURAL','NO','NOT','NOTNULL','NULL','OF',
+'OFFSET','ON','OR','ORDER','OUTER','PLAN','PRAGMA','PRIMARY','QUERY','RAISE','RECURSIVE','REFERENCES',
+'REGEXP','REINDEX','RELEASE','RENAME','REPLACE','RESTRICT','RIGHT','ROLLBACK','ROW','SAVEPOINT','SELECT',
+'SET','TABLE','TEMP','TEMPORARY','THEN','TO','TRANSACTION','TRIGGER','UNION','UNIQUE','UPDATE','USING',
+'VACUUM','VALUES','VIEW','VIRTUAL','WHEN','WHERE','WITH','WITHOUT']
 
 main = Tk()
 main.title("SQL_c")
@@ -26,6 +37,8 @@ functionLabel.grid(row = 0, column = 0)
 
 standardFont = tkFont.Font(size = -12) #the -12 means the font is 12 pixels in height
 textBoxFont = tkFont.Font(family = 'Courier',size=-12)
+standardTextColor = StringVar()
+standardTextColor.set('black')
 
 #-------------------------
 #------buttonFrame--------
@@ -44,6 +57,7 @@ def tempWinCloseButton():
 def tempActivate(event=[]):
 	templateWin.deiconify()
 def runExecute(event=[]):
+	checkKeyWord()
 	executeQuery('execute')
 def clearBoard(event=[]):
 	#print 'clear'
@@ -93,13 +107,84 @@ for i in range(0,10):
 #-------Input Feild-------
 #-------------------------
 
+keyWordColor = StringVar()
+keyWordColor.set('#0000ff')
+floatColor = StringVar()
+floatColor.set('#00A300')
+withinQuotes = StringVar()
+withinQuotes.set('#CC00FF')
+autoUpper = BooleanVar() #determines if keyWords are auto Capitalized
+autoUpper.set(True)
+
+#This function is used by checkKeyWord to colorize the keyword 'string' to the desired 'colorization' through the given 'tag' 
+
+def colorizeText(string,coloration,tag):
+	startSearch = 1.0
+	while 1:
+		pos = textTop.search(string, startSearch, stopindex=END)
+		if not pos:
+			break
+		#print pos
+		endPos = "endPos = pos + '+" + str(len(string)) +"c'"
+		exec endPos
+
+		if tag == 'keyWord' and autoUpper.get():
+			textTop.delete(pos,endPos)
+			textTop.insert(pos,string.upper())
+		
+		textTop.tag_add(tag,pos,endPos)
+		textTop.tag_config(tag, foreground = coloration)
+		startSearch = pos + "+1c"
+
+def checkKeyWord(event = []):
+	#textTop.insert(CURRENT," ")
+	query = textTop.get(1.0,END)
+	querySplit = query.split()
+	for word in querySplit:
+		if word.endswith(';'):
+			word = word [:-1]
+
+		if word.upper() in SQLKeyWords:
+			colorizeText(word,keyWordColor.get(),"keyWord")
+		else:
+			try: 
+				x = float(word) #this checks if querySplit[-1] can be parsed to a float
+				colorizeText(word,floatColor.get(),"float")
+			except:
+				colorizeText(word,standardTextColor.get(),"normalText")
+
+	#the following code colorizes the text within quotes
+	inDoubleQuotes = False
+	inSingleQuotes = False
+	startQuote = 0
+	endQuote = len(query)
+	for i in range(len(query)):
+		if query[i] == '"' and inSingleQuotes == False: #if we hit a " and we are not currently within the bounds of a '
+			if inDoubleQuotes:
+				colorizeText(query[startQuote:(i+1)],withinQuotes.get(),"dQoutes")
+			else:
+				startQuote = i
+			inDoubleQuotes = not inDoubleQuotes
+			#print inDoubleQuotes
+		elif query[i] == "'" and inDoubleQuotes == False: # if we hit a ' and we are not currently within the bounds of a "
+			if inSingleQuotes:
+				colorizeText(query[startQuote:(i+1)],withinQuotes.get(),"sQoutes")
+			else:
+				startQuote = i
+			inSingleQuotes = not inSingleQuotes
+			#print inSingleQuotes
+
 inputScrollbar = Scrollbar(executeFrame)
 inputScrollbar.pack(side=RIGHT,fill=Y)
-textTop = Text(executeFrame,width = 120, height = 15,yscrollcommand = inputScrollbar.set, font = textBoxFont)
+textTop = Text(executeFrame,width = 120, height = 15,yscrollcommand = inputScrollbar.set, font = textBoxFont, fg = standardTextColor.get())
 textTop.pack(side = LEFT, fill=BOTH)
 executeFrame.grid(row = 0, column = 1)
 
 inputScrollbar.config(command = textTop.yview)
+
+textTop.bind('<Return>',checkKeyWord)
+textTop.bind('<Tab>',checkKeyWord)
+textTop.bind('<space>',checkKeyWord)
 
 #-------------------------
 #-------menuBar-----------
@@ -122,7 +207,7 @@ colTypeInclude = BooleanVar()
 colTypeInclude.set(False)
 colDivider = StringVar()
 colDivider.set(" | ")
-def propertiesEdit():
+def OutputPropertiesEdit():
 	propertyWin = Toplevel(main)
 	propertyWin.maxsize(200,200)
 	propertyWin.minsize(200,200)
@@ -163,6 +248,50 @@ def propertiesEdit():
 	colDividerEntry.grid(row = 0, column = 1)
 	colDividerFrame.grid(row = 3, column = 0, sticky = W)
 
+def TextColorizationOptions():
+	textColorWin = Toplevel(main)
+	textColorWin.maxsize(200,150)
+	textColorWin.minsize(200,150)
+	textColorWin.title("Text Colors")
+	standardFrame = Frame(textColorWin)
+	keyWordFrame = Frame(textColorWin)
+	autoUpperFrame = Frame(textColorWin)
+	floatFrame = Frame(textColorWin)
+	quoteFrame = Frame(textColorWin)
+
+	standardTextEntry = Entry(standardFrame, textvariable=standardTextColor,width=13)
+	keyWordEntry = Entry(keyWordFrame, textvariable=keyWordColor,width=13)
+	autoUpperTrue = Radiobutton(autoUpperFrame, text="On",variable=autoUpper,value=True)
+	autoUpperFalse = Radiobutton(autoUpperFrame, text="Off",variable=autoUpper,value=False)
+	floatEntry = Entry(floatFrame, textvariable=floatColor,width=13)
+	quoteEntry = Entry(quoteFrame, textvariable=withinQuotes,width=13)
+	standardTextLabel = Label(standardFrame, text = "Standard Text Color:",width=20, anchor = W)
+	keyWordLabel = Label(keyWordFrame, text = "KeyWord Text Color:",width=20, anchor = W)
+	autoUpperLabel = Label(autoUpperFrame, text = "Automatically Capitalize Keywords:", anchor = W)
+	floatLabel = Label(floatFrame, text = "Float Text Color:",width=20, anchor = W)
+	quoteLabel = Label(quoteFrame, text = "Quote Text Color:", width=20, anchor = W)
+
+	standardTextLabel.grid(row = 0, column = 0)
+	standardTextEntry.grid(row = 0, column = 1)
+	standardFrame.grid(row = 0, column = 0, sticky = W, ipady = 3)
+
+	keyWordLabel.grid(row = 0, column = 0)
+	keyWordEntry.grid(row = 0, column = 1)
+	keyWordFrame.grid(row = 1, column = 0, sticky = W, ipady = 3)
+	
+	autoUpperLabel.grid(row = 0, column = 0, columnspan = 2)
+	autoUpperTrue.grid(row = 1, column = 0, sticky = W)
+	autoUpperFalse.grid(row = 1, column = 1, sticky = W)
+	autoUpperFrame.grid(row = 2, column = 0, sticky = W, ipady = 3)
+
+	floatLabel.grid(row = 0, column = 0)
+	floatEntry.grid(row = 0, column = 1)
+	floatFrame.grid(row = 3, column = 0, sticky = W, ipady = 3)
+
+	quoteLabel.grid(row = 0, column = 0)
+	quoteEntry.grid(row = 0, column = 1)
+	quoteFrame.grid(row = 4, column = 0, sticky = W, ipady = 3)
+
 def openWiki():
 	webbrowser.open("https://github.com/ChrisEarman/SQLDataBaseViewer/wiki")
 
@@ -177,7 +306,8 @@ menubar.add_cascade(label="File", menu=filemenu)
 editmenu = Menu(menubar, tearoff=0)
 editmenu.add_command(label="Undo", command=donothing)
 editmenu.add_separator()
-editmenu.add_command(label="Properties", command=propertiesEdit)
+editmenu.add_command(label="Output Properties", command=OutputPropertiesEdit)
+editmenu.add_command(label="Text Colorization Properties", command=TextColorizationOptions)
 menubar.add_cascade(label="Edit", menu=editmenu)
 
 helpmenu = Menu(menubar, tearoff=0)
